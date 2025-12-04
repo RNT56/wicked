@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="WICKED - An immersive WebGL experience showcasing cutting-edge 3D graphics, shaders, and interactive design">
+  <title>WICKED | Immersive WebGL Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-C4Oe53Hq.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BC9kFnrp.css">
+</head>
+
+<body>
+  <!-- Preloader -->
+  <div id="loader" class="loader">
+    <div class="loader-content">
+      <div class="loader-text">WICKED</div>
+      <div class="loader-bar">
+        <div class="loader-progress"></div>
+      </div>
+      <div class="loader-percent">0%</div>
+    </div>
+  </div>
+
+  <!-- Custom Cursor -->
+  <div id="cursor" class="cursor">
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav id="nav" class="nav">
+    <div class="nav-logo">WICKED</div>
+    <div class="nav-links">
+      <a href="#portal" class="nav-link active" data-section="0">Portal</a>
+      <a href="#particles" class="nav-link" data-section="1">Universe</a>
+      <a href="#morph" class="nav-link" data-section="2">Morph</a>
+      <a href="#fluid" class="nav-link" data-section="3">Fluid</a>
+      <a href="#crystal" class="nav-link" data-section="4">Crystal</a>
+      <a href="#cosmos" class="nav-link" data-section="5">Cosmos</a>
+    </div>
+    <div class="nav-progress">
+      <div class="nav-progress-fill"></div>
+    </div>
+  </nav>
+
+  <!-- Main Canvas (Three.js) -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Sections -->
+  <main id="main">
+    <!-- Section 1: Portal -->
+    <section id="portal" class="section section-portal" data-section="portal">
+      <div class="section-content">
+        <h1 class="hero-title">
+          <span class="hero-line">ENTER THE</span>
+          <span class="hero-line hero-accent">WICKED</span>
+          <span class="hero-line">DIMENSION</span>
+        </h1>
+        <p class="hero-subtitle">Scroll to begin your journey through immersive WebGL experiences</p>
+        <div class="scroll-indicator">
+          <div class="scroll-arrow"></div>
+          <span>Scroll</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Particle Universe -->
+    <section id="particles" class="section section-particles" data-section="particles">
+      <div class="section-content">
+        <span class="section-label">01</span>
+        <h2 class="section-title">Particle Universe</h2>
+        <p class="section-description">Navigate through thousands of stars. Your cursor commands gravity itself.</p>
+      </div>
+    </section>
+
+    <!-- Section 3: Morphing Geometries -->
+    <section id="morph" class="section section-morph" data-section="morph">
+      <div class="section-content">
+        <span class="section-label">02</span>
+        <h2 class="section-title">Morphing Geometries</h2>
+        <p class="section-description">Watch as platonic solids transform through noise-driven displacement.</p>
+      </div>
+    </section>
+
+    <!-- Section 4: Fluid Dynamics -->
+    <section id="fluid" class="section section-fluid" data-section="fluid">
+      <div class="section-content">
+        <span class="section-label">03</span>
+        <h2 class="section-title">Fluid Dynamics</h2>
+        <p class="section-description">Real-time fluid simulation reacting to your every movement.</p>
+      </div>
+    </section>
+
+    <!-- Section 5: Crystal Gallery -->
+    <section id="crystal" class="section section-crystal" data-section="crystal">
+      <div class="section-content">
+        <span class="section-label">04</span>
+        <h2 class="section-title">Crystal Gallery</h2>
+        <p class="section-description">Photorealistic gems with light refraction and prismatic effects.</p>
+      </div>
+    </section>
+
+    <!-- Section 6: Data Cosmos -->
+    <section id="cosmos" class="section section-cosmos" data-section="cosmos">
+      <div class="section-content">
+        <span class="section-label">05</span>
+        <h2 class="section-title">Data Cosmos</h2>
+        <p class="section-description">Abstract visualization of interconnected data nodes pulsing with energy.</p>
+        <div class="cta-container">
+          <a href="#portal" class="cta-button">
+            <span>Experience Again</span>
+            <div class="cta-glow"></div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <span>Built with Three.js + GSAP</span>
+      <span class="footer-divider">•</span>
+      <span>WICKED 2024</span>
+    </div>
+  </footer>
+
+</body>
+
+</html>

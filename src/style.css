@@ -95,7 +95,7 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   overflow-x: hidden;
-  cursor: none;
+  cursor: auto;
 }
 
 a {
@@ -451,6 +451,11 @@ a {
   border-radius: 40px;
 }
 
+.section-quantum .section-content,
+.section-singularity .section-content {
+  /* No card styling - transparent background */
+}
+
 .hero-title {
   font-family: var(--font-display);
   font-size: var(--text-hero);
@@ -564,7 +569,7 @@ a {
   box-shadow: var(--glass-shadow);
   overflow: hidden;
   transition: all var(--transition-liquid);
-  cursor: none;
+  cursor: pointer;
 }
 
 .btn::before {
@@ -625,7 +630,7 @@ a {
   box-shadow: var(--glass-shadow);
   overflow: hidden;
   transition: all var(--transition-liquid);
-  cursor: none;
+  cursor: pointer;
 }
 
 .cta-button:hover {

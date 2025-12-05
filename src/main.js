@@ -7,6 +7,7 @@ import './style.css'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { EncryptedText } from './EncryptedText.js'
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger)
@@ -35,8 +36,10 @@ const state = {
   deltaTime: 0,
   lastTime: 0,
   portalTravel: 0, // Accumulated travel distance for smooth portal flow
-  sections: ['portal', 'particles', 'morph', 'fluid', 'crystal', 'cosmos']
+  sections: ['portal', 'particles', 'morph', 'fluid', 'entropy', 'crystal', 'cosmos', 'quantum', 'singularity']
 }
+
+let encryptedLines = []
 
 // ═══════════════════════════════════════════════════════════════
 // THREE.JS SETUP - Enhanced Quality
@@ -826,7 +829,286 @@ fluidPlane.position.z = -3
 fluidGroup.add(fluidPlane)
 
 // ═══════════════════════════════════════════════════════════════
-// SECTION 5: CRYSTAL GALLERY - Prismatic Gems
+// SECTION 5: ENTROPY - Noise Fields
+// ═══════════════════════════════════════════════════════════════
+const entropyGroup = new THREE.Group()
+entropyGroup.visible = false
+scene.add(entropyGroup)
+
+// Fullscreen noise plane - Optimized High Fidelity
+const entropyGeometry = new THREE.PlaneGeometry(16, 9, 1, 1)
+const entropyMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    uColorDeep: { value: new THREE.Color(0x000308) },
+    uColorMid: { value: new THREE.Color(0x081830) },
+    uColorBright: { value: new THREE.Color(0x1a4070) },
+    uColorAccent: { value: new THREE.Color(0x40a0ff) }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform vec2 uMouse;
+    uniform vec2 uResolution;
+    uniform vec3 uColorDeep;
+    uniform vec3 uColorMid;
+    uniform vec3 uColorBright;
+    uniform vec3 uColorAccent;
+    varying vec2 vUv;
+    
+    // High-quality hash
+    float hash(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+    
+    // Smooth noise
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0); // Quintic interpolation
+      
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+      
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+    
+    // FBM with rotation - Optimized to 5 octaves
+    mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
+    float fbm(vec2 p) {
+      float value = 0.0;
+      float amplitude = 0.5;
+      for(int i = 0; i < 5; i++) {
+        value += amplitude * noise(p);
+        p = rot * p * 2.0;
+        amplitude *= 0.5;
+      }
+      return value;
+    }
+    
+    // Dual domain warping - returns the warp vector
+    vec2 getWarp(vec2 p) {
+      vec2 q = vec2(
+        fbm(p + vec2(0.0, 0.0)),
+        fbm(p + vec2(5.2, 1.3))
+      );
+      
+      vec2 r = vec2(
+        fbm(p + 3.0 * q + vec2(1.7, 9.2) + uTime * 0.05),
+        fbm(p + 3.0 * q + vec2(8.3, 2.8) + uTime * 0.08)
+      );
+      
+      return r;
+    }
+    
+    // Electric arc effect
+    float electricArc(vec2 p, float time) {
+      float arc = 0.0;
+      for(float i = 0.0; i < 2.0; i++) { // Reduced to 2 layers
+        float offset = i * 1.5;
+        float wave = sin(p.x * 10.0 + time * 3.0 + offset) * 0.1;
+        wave += sin(p.x * 20.0 + time * 5.0 + offset * 2.0) * 0.05;
+        // Add noise to wave for jaggedness
+        wave += (hash(p.xx * 10.0 + time) - 0.5) * 0.02;
+        
+        float dist = abs(p.y - wave - (i - 0.5) * 0.4);
+        float intensity = smoothstep(0.03, 0.0, dist);
+        // Flicker
+        intensity *= (0.5 + 0.5 * sin(time * 15.0 + i * 10.0));
+        arc += intensity;
+      }
+      return arc;
+    }
+    
+    void main() {
+      vec2 uv = vUv;
+      
+      // Aspect correction
+      vec2 p = uv * 2.0 - 1.0;
+      p.x *= uResolution.x / uResolution.y;
+      
+      // Mouse influence
+      vec2 mouse = uMouse;
+      float mouseDist = length(p - mouse);
+      float mouseInfluence = smoothstep(1.2, 0.0, mouseDist);
+      float mouseRipple = sin(mouseDist * 10.0 - uTime * 3.0) * mouseInfluence * 0.1;
+      
+      // Scale and animate
+      vec2 noiseCoord = p * 1.5 + uTime * 0.015;
+      noiseCoord += mouseRipple;
+      
+      // Calculate Warp Vector ONCE (Expensive part)
+      vec2 warp = getWarp(noiseCoord);
+      
+      // Chromatic Aberration: Apply warp with slight offsets to the final FBM lookup only
+      // This saves ~50% of noise calculations compared to warping each channel separately
+      float nR = fbm(noiseCoord + 3.0 * warp + vec2(0.01, 0.0));
+      float nG = fbm(noiseCoord + 3.0 * warp);
+      float nB = fbm(noiseCoord + 3.0 * warp - vec2(0.01, 0.0));
+      
+      float n = (nR + nG + nB) / 3.0;
+      
+      // Electric arcs
+      float arcs = electricArc(p, uTime);
+      
+      // Color grading with chromatic aberration
+      vec3 color;
+      color.r = mix(uColorDeep.r, uColorMid.r, nR);
+      color.g = mix(uColorDeep.g, uColorMid.g, nG);
+      color.b = mix(uColorDeep.b, uColorMid.b, nB);
+      
+      vec3 brightColor = mix(uColorBright, uColorAccent, pow(n, 2.0));
+      color = mix(color, brightColor, pow(n, 1.5));
+      
+      // Add electric arcs
+      color += uColorAccent * arcs * 0.8;
+      
+      // Mouse glow
+      vec3 mouseGlow = uColorAccent * mouseInfluence * 0.4;
+      color += mouseGlow;
+      
+      // Subtle scanlines
+      float scanline = sin(uv.y * uResolution.y * 0.5) * 0.02;
+      color += scanline;
+      
+      // Dithering to prevent banding
+      float dither = hash(uv + uTime) * 0.03 - 0.015;
+      color += dither;
+      
+      // Vignette
+      float vignette = 1.0 - pow(length(uv - 0.5) * 1.3, 2.0);
+      color *= vignette;
+      
+      // Bloom
+      float bloom = pow(max(n - 0.5, 0.0) * 2.0, 2.0);
+      color += uColorAccent * bloom * 0.1;
+      
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `,
+  transparent: false
+})
+
+const entropyPlane = new THREE.Mesh(entropyGeometry, entropyMaterial)
+entropyPlane.position.z = -5
+entropyGroup.add(entropyPlane)
+
+// Floating entropy particles - Enhanced
+const entropyParticleCount = 600
+const entropyParticleGeo = new THREE.BufferGeometry()
+const entropyParticlePos = new Float32Array(entropyParticleCount * 3)
+const entropyParticleSizes = new Float32Array(entropyParticleCount)
+const entropyParticleOffsets = new Float32Array(entropyParticleCount)
+const entropyParticleColors = new Float32Array(entropyParticleCount * 3)
+
+const entropyColorA = new THREE.Color(0x2080ff)
+const entropyColorB = new THREE.Color(0x40c0ff)
+const entropyColorC = new THREE.Color(0xffffff)
+
+for (let i = 0; i < entropyParticleCount; i++) {
+  entropyParticlePos[i * 3] = (Math.random() - 0.5) * 14
+  entropyParticlePos[i * 3 + 1] = (Math.random() - 0.5) * 10
+  entropyParticlePos[i * 3 + 2] = (Math.random() - 0.5) * 8
+  entropyParticleSizes[i] = Math.random() * 2.0 + 0.3
+  entropyParticleOffsets[i] = Math.random() * 100
+
+  // Random color mix
+  const t = Math.random()
+  const c = t < 0.7
+    ? new THREE.Color().lerpColors(entropyColorA, entropyColorB, t / 0.7)
+    : new THREE.Color().lerpColors(entropyColorB, entropyColorC, (t - 0.7) / 0.3)
+  entropyParticleColors[i * 3] = c.r
+  entropyParticleColors[i * 3 + 1] = c.g
+  entropyParticleColors[i * 3 + 2] = c.b
+}
+
+entropyParticleGeo.setAttribute('position', new THREE.BufferAttribute(entropyParticlePos, 3))
+entropyParticleGeo.setAttribute('size', new THREE.BufferAttribute(entropyParticleSizes, 1))
+entropyParticleGeo.setAttribute('offset', new THREE.BufferAttribute(entropyParticleOffsets, 1))
+entropyParticleGeo.setAttribute('color', new THREE.BufferAttribute(entropyParticleColors, 3))
+
+const entropyParticleMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uPixelRatio: { value: renderer.getPixelRatio() }
+  },
+  vertexShader: `
+    attribute float size;
+    attribute float offset;
+    attribute vec3 color;
+    
+    uniform float uTime;
+    uniform float uPixelRatio;
+    
+    varying float vAlpha;
+    varying vec3 vColor;
+    
+    void main() {
+      vec3 pos = position;
+      
+      // Complex chaotic motion
+      float t = uTime * 0.2;
+      pos.x += sin(t + offset) * 0.6 + sin(t * 1.3 + offset * 2.0) * 0.3;
+      pos.y += cos(t * 0.8 + offset * 1.3) * 0.5 + cos(t * 1.5 + offset * 0.7) * 0.2;
+      pos.z += sin(t * 0.5 + offset * 0.7) * 0.4;
+      
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      
+      gl_PointSize = size * (100.0 / -mvPosition.z) * uPixelRatio;
+      
+      // Flickering alpha
+      vAlpha = 0.4 + 0.4 * sin(uTime * 2.5 + offset * 3.0);
+      vAlpha *= 0.8 + 0.2 * sin(uTime * 8.0 + offset * 10.0); // High-freq flicker
+      
+      vColor = color;
+    }
+  `,
+  fragmentShader: `
+    varying float vAlpha;
+    varying vec3 vColor;
+    
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv);
+      if(d > 0.5) discard;
+      
+      // Optical glow (Gaussian-like)
+      float glow = exp(-d * 8.0);
+      
+      // Core intensity
+      float core = exp(-d * 20.0);
+      
+      vec3 color = vColor;
+      // Shift glow color slightly towards cyan/white at edges
+      color = mix(color, vec3(1.0), core * 0.8);
+      
+      gl_FragColor = vec4(color, glow * vAlpha);
+    }
+  `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+})
+
+
+const entropyParticles = new THREE.Points(entropyParticleGeo, entropyParticleMat)
+entropyGroup.add(entropyParticles)
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION 6: CRYSTAL GALLERY - Prismatic Gems
 // ═══════════════════════════════════════════════════════════════
 const crystalGroup = new THREE.Group()
 crystalGroup.visible = false
@@ -1278,11 +1560,658 @@ const connections = new THREE.LineSegments(connectionGeometry, connectionMateria
 cosmosGroup.add(connections)
 
 // ═══════════════════════════════════════════════════════════════
+// SECTION 7: QUANTUM CORE - High-Fidelity Singularity
+// ═══════════════════════════════════════════════════════════════
+const quantumGroup = new THREE.Group()
+quantumGroup.visible = false
+scene.add(quantumGroup)
+
+// 1. The Shimmering Core (Ultra High-Fidelity Event Horizon)
+const coreGeometry = new THREE.IcosahedronGeometry(1.6, 128)
+const coreMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+    uColorDeep: { value: new THREE.Color(0x000005) },
+    uColorMid: { value: new THREE.Color(0x0a1030) },
+    uRimBlue: { value: new THREE.Color(0x2288ff) },
+    uRimOrange: { value: new THREE.Color(0xff6600) }
+  },
+  vertexShader: `
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    varying vec3 vWorldPosition;
+    varying vec3 vPosition;
+    varying float vNoise;
+    varying float vDisplacement;
+    varying float vMouseInfluence;
+    
+    uniform float uTime;
+    uniform vec2 uMouse;
+    
+    // Simplex 3D Noise
+    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+    
+    float snoise(vec3 v) {
+      const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+      const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+      vec3 i = floor(v + dot(v, C.yyy));
+      vec3 x0 = v - i + dot(i, C.xxx);
+      vec3 g = step(x0.yzx, x0.xyz);
+      vec3 l = 1.0 - g;
+      vec3 i1 = min(g.xyz, l.zxy);
+      vec3 i2 = max(g.xyz, l.zxy);
+      vec3 x1 = x0 - i1 + C.xxx;
+      vec3 x2 = x0 - i2 + C.yyy;
+      vec3 x3 = x0 - 1.0 + D.yyy;
+      i = mod289(i);
+      vec4 p = permute(permute(permute(
+                 i.z + vec4(0.0, i1.z, i2.z, 1.0))
+               + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+               + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+      float n_ = 0.142857142857;
+      vec3 ns = n_ * D.wyz - D.xzx;
+      vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+      vec4 x_ = floor(j * ns.z);
+      vec4 y_ = floor(j - 7.0 * x_);
+      vec4 x = x_ * ns.x + ns.yyyy;
+      vec4 y = y_ * ns.x + ns.yyyy;
+      vec4 h = 1.0 - abs(x) - abs(y);
+      vec4 b0 = vec4(x.xy, y.xy);
+      vec4 b1 = vec4(x.zw, y.zw);
+      vec4 s0 = floor(b0) * 2.0 + 1.0;
+      vec4 s1 = floor(b1) * 2.0 + 1.0;
+      vec4 sh = -step(h, vec4(0.0));
+      vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+      vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+      vec3 p0 = vec3(a0.xy, h.x);
+      vec3 p1 = vec3(a0.zw, h.y);
+      vec3 p2 = vec3(a1.xy, h.z);
+      vec3 p3 = vec3(a1.zw, h.w);
+      vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+      p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+      vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+      m = m * m;
+      return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+    }
+    
+    // FBM for organic displacement
+    float fbm(vec3 p) {
+      float value = 0.0;
+      float amplitude = 0.5;
+      for(int i = 0; i < 4; i++) {
+        value += amplitude * snoise(p);
+        p *= 2.0;
+        amplitude *= 0.5;
+      }
+      return value;
+    }
+
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+      
+      // Multi-layer displacement
+      float baseNoise = fbm(position * 3.0 + uTime * 0.3);
+      float detailNoise = snoise(position * 15.0 + uTime * 1.5) * 0.3;
+      float microNoise = snoise(position * 40.0 + uTime * 3.0) * 0.1;
+      
+      vNoise = baseNoise;
+      vDisplacement = baseNoise + detailNoise;
+      
+      // Mouse interaction - attract/repel effect
+      vec3 mouseDir = vec3(uMouse.x, uMouse.y, 0.0);
+      float mouseDist = length(position.xy - mouseDir.xy * 1.5);
+      float mouseEffect = smoothstep(2.0, 0.0, mouseDist);
+      vMouseInfluence = mouseEffect;
+      
+      // Organic breathing displacement + mouse warp
+      float displacement = (baseNoise + detailNoise + microNoise) * 0.08;
+      displacement += sin(uTime * 1.5) * 0.01; // Breathing
+      displacement += mouseEffect * 0.15; // Mouse bulge
+      
+      // Add directional pull toward mouse
+      vec3 pullDir = normalize(vec3(uMouse.x, uMouse.y, 0.5) - position) * mouseEffect * 0.1;
+      
+      vec3 newPos = position + normal * displacement + pullDir;
+      
+      vec4 worldPos = modelMatrix * vec4(newPos, 1.0);
+      vWorldPosition = worldPos.xyz;
+      
+      vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      vPosition = newPos;
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    varying vec3 vWorldPosition;
+    varying vec3 vPosition;
+    varying float vNoise;
+    varying float vDisplacement;
+    varying float vMouseInfluence;
+    
+    uniform vec3 uColorDeep;
+    uniform vec3 uColorMid;
+    uniform vec3 uRimBlue;
+    uniform vec3 uRimOrange;
+    uniform float uTime;
+    uniform vec2 uMouse;
+    
+    // Noise for fragment effects
+    float hash(vec3 p) {
+      p = fract(p * 0.3183099 + 0.1);
+      p *= 17.0;
+      return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+    }
+    
+    void main() {
+      vec3 normal = normalize(vNormal);
+      vec3 viewDir = normalize(vViewPosition);
+      
+      // Multi-power Fresnel for complex rim
+      float fresnel1 = pow(1.0 - max(dot(viewDir, normal), 0.0), 2.0);
+      float fresnel2 = pow(1.0 - max(dot(viewDir, normal), 0.0), 4.0);
+      float fresnel3 = pow(1.0 - max(dot(viewDir, normal), 0.0), 8.0);
+      
+      // Mouse-influenced rim color - intensify orange when mouse is near
+      float mouseGlow = vMouseInfluence * 2.0;
+      float rimBlend = sin(uTime * 0.5 + vPosition.y * 2.0) * 0.5 + 0.5;
+      rimBlend = mix(rimBlend, 1.0, mouseGlow * 0.5); // Shift toward orange
+      vec3 rimColor = mix(uRimBlue, uRimOrange, rimBlend);
+      
+      // Base: Deep void with subtle color
+      vec3 color = mix(uColorDeep, uColorMid, fresnel1 * 0.3);
+      
+      // Inner glow (subsurface scattering simulation)
+      float innerGlow = smoothstep(-0.2, 0.3, vNoise);
+      vec3 glowColor = mix(uRimBlue * 0.3, uRimOrange * 0.5, innerGlow);
+      color += glowColor * (1.0 - fresnel1) * 0.15;
+      
+      // Mouse-enhanced glow
+      color += uRimOrange * mouseGlow * 0.3;
+      
+      // Multi-layer rim lighting (intensified by mouse)
+      float rimIntensity = 1.0 + mouseGlow * 0.5;
+      color += rimColor * fresnel1 * 0.8 * rimIntensity;
+      color += rimColor * fresnel2 * 1.2 * rimIntensity;
+      color += vec3(1.0, 0.95, 0.9) * fresnel3 * 0.6 * (1.0 + mouseGlow);
+      
+      // Energy veins
+      float veins = smoothstep(0.45, 0.5, abs(vDisplacement));
+      color += uRimOrange * veins * fresnel1 * 0.5;
+      
+      // Micro-shimmer (high frequency sparkle)
+      float sparkle = hash(vPosition * 100.0 + uTime);
+      sparkle = smoothstep(0.97, 1.0, sparkle);
+      color += vec3(1.0) * sparkle * fresnel2 * 0.8;
+      
+      // Specular highlights
+      vec3 lightDir = normalize(vec3(sin(uTime * 0.3), 1.0, cos(uTime * 0.2)));
+      vec3 halfDir = normalize(lightDir + viewDir);
+      float spec = pow(max(dot(normal, halfDir), 0.0), 128.0);
+      color += vec3(1.0, 0.95, 0.9) * spec * 0.4;
+      
+      // Gamma correction
+      color = pow(color, vec3(0.9));
+      
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `
+})
+const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial)
+quantumGroup.add(coreMesh)
+
+// 2. Solar Flares (Graceful Eruptions)
+const streamGroup = new THREE.Group()
+quantumGroup.add(streamGroup)
+
+const streamMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uColorCore: { value: new THREE.Color(0xffffff) },
+    uColorMid: { value: new THREE.Color(0xff6600) },
+    uColorEdge: { value: new THREE.Color(0x0044aa) }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    
+    void main() {
+      vUv = uv;
+      vPosition = position;
+      vNormal = normalize(normalMatrix * normal);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform vec3 uColorCore;
+    uniform vec3 uColorMid;
+    uniform vec3 uColorEdge;
+    varying vec2 vUv;
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    
+    // Smooth noise
+    float hash(float n) { return fract(sin(n) * 43758.5453123); }
+    float noise(vec3 x) {
+      vec3 p = floor(x);
+      vec3 f = fract(x);
+      f = f * f * (3.0 - 2.0 * f);
+      float n = p.x + p.y * 57.0 + 113.0 * p.z;
+      return mix(
+        mix(mix(hash(n), hash(n + 1.0), f.x),
+            mix(hash(n + 57.0), hash(n + 58.0), f.x), f.y),
+        mix(mix(hash(n + 113.0), hash(n + 114.0), f.x),
+            mix(hash(n + 170.0), hash(n + 171.0), f.x), f.y), f.z);
+    }
+    
+    void main() {
+      // Slow, graceful flow (like solar plasma eruptions)
+      float slowTime = uTime * 0.15; // Much slower
+      
+      // Single main eruption wave
+      float eruption = fract(vUv.x - slowTime);
+      
+      // Soft, organic turbulence
+      float turb = noise(vPosition * 2.0 + slowTime * 0.5) * 0.15;
+      eruption = fract(eruption + turb);
+      
+      // Eruption intensity - bright at origin, fading along length
+      float intensity = smoothstep(0.0, 0.15, eruption) * smoothstep(0.6, 0.1, eruption);
+      
+      // Secondary subtle wave
+      float wave2 = fract(vUv.x * 2.0 - slowTime * 1.3);
+      float secondary = smoothstep(0.0, 0.2, wave2) * smoothstep(0.4, 0.15, wave2) * 0.3;
+      
+      float totalIntensity = intensity + secondary;
+      
+      // Fade along the flare length (brighter near base)
+      float lengthFade = 1.0 - vUv.x * 0.5;
+      totalIntensity *= lengthFade;
+      
+      // Radial fade (tube cross-section)
+      float radialFade = smoothstep(0.0, 0.4, vUv.y) * smoothstep(1.0, 0.6, vUv.y);
+      radialFade = pow(radialFade, 0.7);
+      
+      // Color gradient: Core (white) -> Mid (orange) -> Edge (blue)
+      vec3 color = mix(uColorEdge, uColorMid, totalIntensity);
+      color = mix(color, uColorCore, pow(totalIntensity, 2.0) * 0.8);
+      
+      // Subtle heat shimmer
+      float shimmer = noise(vPosition * 8.0 + slowTime * 2.0);
+      color += vec3(0.05, 0.02, 0.0) * shimmer * totalIntensity;
+      
+      float alpha = totalIntensity * radialFade * 0.7;
+      
+      // Gentle brightness
+      color *= 1.2;
+      
+      gl_FragColor = vec4(color, alpha);
+    }
+  `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.DoubleSide
+})
+
+// Solar flare configurations (arc-like shapes)
+const streamConfigs = [
+  { p: 2, q: 3, radius: 2.4, tube: 0.035 },
+  { p: 3, q: 4, radius: 2.8, tube: 0.025 },
+  { p: 2, q: 5, radius: 3.2, tube: 0.02 }
+]
+
+streamConfigs.forEach((cfg, i) => {
+  const geo = new THREE.TorusKnotGeometry(cfg.radius, cfg.tube, 200, 24, cfg.p, cfg.q)
+  const stream = new THREE.Mesh(geo, streamMaterial.clone())
+
+  stream.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI)
+  stream.userData = {
+    rotSpeed: new THREE.Vector3(
+      (Math.random() - 0.5) * 0.0008, // Much slower rotation
+      (Math.random() - 0.5) * 0.0008,
+      (Math.random() - 0.5) * 0.0008
+    )
+  }
+  streamGroup.add(stream)
+})
+
+// 3. Firefly Particles (High-Fidelity)
+const fireflyCount = 300
+const fireflyGeo = new THREE.BufferGeometry()
+const fireflyPos = new Float32Array(fireflyCount * 3)
+const fireflySizes = new Float32Array(fireflyCount)
+const fireflyOffsets = new Float32Array(fireflyCount)
+const fireflyColors = new Float32Array(fireflyCount * 3)
+
+const colorBlue = new THREE.Color(0x0066ff)
+const colorOrange = new THREE.Color(0xffaa00)
+
+for (let i = 0; i < fireflyCount; i++) {
+  // Sphere distribution
+  const r = 3.5 + Math.random() * 4.0
+  const theta = Math.random() * Math.PI * 2
+  const phi = Math.acos(2 * Math.random() - 1)
+
+  fireflyPos[i * 3] = r * Math.sin(phi) * Math.cos(theta)
+  fireflyPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
+  fireflyPos[i * 3 + 2] = r * Math.cos(phi)
+
+  fireflySizes[i] = Math.random() * 2.0 + 0.5
+  fireflyOffsets[i] = Math.random() * 100.0
+
+  // Mix colors randomly
+  const mixVal = Math.random()
+  const c = new THREE.Color().lerpColors(colorBlue, colorOrange, mixVal)
+  fireflyColors[i * 3] = c.r
+  fireflyColors[i * 3 + 1] = c.g
+  fireflyColors[i * 3 + 2] = c.b
+}
+
+fireflyGeo.setAttribute('position', new THREE.BufferAttribute(fireflyPos, 3))
+fireflyGeo.setAttribute('size', new THREE.BufferAttribute(fireflySizes, 1))
+fireflyGeo.setAttribute('offset', new THREE.BufferAttribute(fireflyOffsets, 1))
+fireflyGeo.setAttribute('color', new THREE.BufferAttribute(fireflyColors, 3))
+
+const fireflyMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uPixelRatio: { value: renderer.getPixelRatio() }
+  },
+  vertexShader: `
+    attribute float size;
+    attribute float offset;
+    attribute vec3 color;
+    
+    uniform float uTime;
+    uniform float uPixelRatio;
+    
+    varying vec3 vColor;
+    varying float vAlpha;
+    
+    void main() {
+      vec3 pos = position;
+      
+      // Organic floating motion
+      pos.x += sin(uTime * 0.5 + offset) * 0.2;
+      pos.y += cos(uTime * 0.3 + offset) * 0.2;
+      pos.z += sin(uTime * 0.4 + offset) * 0.2;
+      
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      
+      gl_PointSize = size * (100.0 / -mvPosition.z) * uPixelRatio;
+      
+      vColor = color;
+      
+      // Pulsing alpha
+      vAlpha = 0.5 + 0.5 * sin(uTime * 2.0 + offset);
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+    varying float vAlpha;
+    
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv);
+      if(d > 0.5) discard;
+      
+      // Soft glow
+      float glow = 1.0 - smoothstep(0.0, 0.5, d);
+      glow = pow(glow, 2.0);
+      
+      gl_FragColor = vec4(vColor, glow * vAlpha);
+    }
+  `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+})
+
+const fireflies = new THREE.Points(fireflyGeo, fireflyMaterial)
+quantumGroup.add(fireflies)
+
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// SECTION 8: THE SINGULARITY - Interstellar Black Hole
+// ═══════════════════════════════════════════════════════════════
+const singularityGroup = new THREE.Group()
+singularityGroup.visible = false
+scene.add(singularityGroup)
+
+// Constants - Adjusted for tilted view
+const BH_RADIUS = 2.0
+const DISK_INNER = 2.6
+const DISK_OUTER = 14.0
+
+// Shared Uniforms
+const singularityUniforms = {
+  uTime: { value: 0 },
+  uMouse: { value: new THREE.Vector2(0, 0) }, // Added mouse uniform
+  uColorInner: { value: new THREE.Color(0xffffff) }, // Blinding white hot
+  uColorMid: { value: new THREE.Color(0xffaa55) },   // Bright orange
+  uColorOuter: { value: new THREE.Color(0xcc4411) }  // Deep red-orange
+}
+
+// Noise functions
+const singularityNoise = `
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 6; i++) {
+      v += a * noise(p);
+      p *= 2.0;
+      a *= 0.5;
+    }
+    return v;
+  }
+`
+
+// 1. The Event Horizon (Black Hole Sphere)
+const bhGeometry = new THREE.SphereGeometry(BH_RADIUS, 64, 64)
+const bhMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
+const blackHole = new THREE.Mesh(bhGeometry, bhMaterial)
+singularityGroup.add(blackHole)
+
+// 2. Accretion Disk (Main Disk)
+const diskGeometry = new THREE.RingGeometry(DISK_INNER, DISK_OUTER, 256, 64)
+
+const diskMaterial = new THREE.ShaderMaterial({
+  uniforms: singularityUniforms,
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+    void main() {
+      vUv = uv;
+      vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform vec2 uMouse;
+    uniform vec3 uColorInner;
+    uniform vec3 uColorMid;
+    uniform vec3 uColorOuter;
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+    
+    ${singularityNoise}
+
+    void main() {
+      float dist = length(vWorldPos.xz);
+      float angle = atan(vWorldPos.z, vWorldPos.x);
+      
+      // Normalize distance
+      float r = (dist - 2.6) / 11.4;
+      
+      // Mouse interaction: distort the swirl based on mouse position
+      float mouseDistort = length(uMouse) * 0.5;
+      float distortion = sin(angle * 3.0 + uTime) * mouseDistort * 0.1;
+      
+      // Turbulent Plasma Texture - High Fidelity
+      float swirl = angle * 6.0 + 20.0 / (r + 0.2) - uTime * 1.2 + distortion;
+      
+      // Layered noise for complexity
+      float n1 = fbm(vec2(r * 10.0, swirl));
+      float n2 = fbm(vec2(r * 20.0 + uTime * 0.2, swirl * 2.0));
+      float n3 = fbm(vec2(r * 40.0, swirl * 4.0 - uTime * 0.5)); // Fine detail layer
+      
+      float n = mix(n1, n2, 0.5);
+      n = mix(n, n3, 0.3); // Add fine detail
+      
+      // Color Gradient
+      vec3 color = mix(uColorOuter, uColorMid, smoothstep(0.6, 0.2, r));
+      color = mix(color, uColorInner, smoothstep(0.2, 0.0, r));
+      
+      // Apply texture structure with high contrast
+      color *= 0.4 + 1.8 * pow(n, 2.0);
+      
+      // STRONG Doppler Beaming (Left side bright, Right side dim)
+      float doppler = 1.0 + 0.8 * cos(angle + 2.8); 
+      doppler = pow(max(doppler, 0.0), 1.5); 
+      
+      color *= doppler;
+      
+      // Chromatic Aberration at edges based on mouse
+      float aberration = smoothstep(0.0, 1.0, length(uMouse)) * 0.02;
+      color.r += aberration;
+      color.b -= aberration;
+      
+      // Boost intensity for bloom
+      color *= 3.5;
+      
+      // Soft edges
+      float alpha = smoothstep(1.0, 0.8, r) * smoothstep(0.0, 0.1, r);
+
+      gl_FragColor = vec4(color, alpha * 0.95);
+    }
+  `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  depthWrite: false
+})
+
+const accretionDisk = new THREE.Mesh(diskGeometry, diskMaterial)
+// Tilted view as per new reference (approx 30-40 degrees)
+accretionDisk.rotation.x = -Math.PI / 2 + 0.6
+singularityGroup.add(accretionDisk)
+
+
+// 3. Gravitational Lensing (The "Halo" / Warped Back Disk)
+const haloGeometry = new THREE.SphereGeometry(BH_RADIUS * 1.5, 64, 64)
+const haloMaterial = new THREE.ShaderMaterial({
+  uniforms: singularityUniforms,
+  vertexShader: `
+    varying vec3 vNormal;
+    varying vec2 vUv;
+    varying vec3 vViewPosition;
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform vec2 uMouse;
+    uniform vec3 uColorInner;
+    uniform vec3 uColorMid;
+    uniform vec3 uColorOuter;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+    varying vec3 vViewPosition;
+    
+    ${singularityNoise}
+
+    void main() {
+      vec3 viewDir = normalize(vViewPosition);
+      float fresnel = dot(viewDir, vNormal);
+      
+      float y = vUv.y; 
+      float angle = vUv.x * 6.28;
+      
+      // Mouse interaction
+      float mouseDistort = length(uMouse) * 0.2;
+      
+      // Animate texture
+      float swirl = angle * 4.0 + uTime * 0.5;
+      float n = fbm(vec2(abs(y - 0.5) * 12.0, swirl));
+      
+      // Color
+      vec3 color = mix(uColorInner, uColorOuter, abs(y - 0.5) * 3.0);
+      color *= 0.5 + 1.5 * n;
+      
+      // Masking - Show mainly the top arch for this perspective
+      float distFromEquator = abs(y - 0.5);
+      
+      // Cut out the middle where the real disk is
+      float mask = smoothstep(0.05, 0.2, distFromEquator);
+      
+      // Fade out at poles
+      mask *= smoothstep(0.45, 0.3, distFromEquator);
+      
+      // Doppler on halo too - match the disk
+      float doppler = 1.0 + 0.6 * cos(angle + 2.8);
+      color *= doppler;
+      
+      // Interactive glow boost
+      color *= 2.0 + mouseDistort;
+      
+      gl_FragColor = vec4(color, mask * 0.7);
+    }
+  `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  side: THREE.BackSide,
+  depthWrite: false
+})
+const halo = new THREE.Mesh(haloGeometry, haloMaterial)
+singularityGroup.add(halo)
+
+// 4. Photon Ring (Sharp thin ring)
+const photonRingGeo = new THREE.RingGeometry(BH_RADIUS * 1.02, BH_RADIUS * 1.08, 128)
+const photonRingMat = new THREE.MeshBasicMaterial({
+  color: 0xffffff,
+  side: THREE.DoubleSide,
+  transparent: true,
+  opacity: 0.9,
+  blending: THREE.AdditiveBlending
+})
+const photonRing = new THREE.Mesh(photonRingGeo, photonRingMat)
+singularityGroup.add(photonRing)
+
+// Empty jets placeholder
+const jets = new THREE.Group()
+singularityGroup.add(jets)
+
+// ═══════════════════════════════════════════════════════════════
 // SMOOTH SECTION TRANSITIONS - Pure Crossfade System
 // ═══════════════════════════════════════════════════════════════
 
 // Section groups for easy access
-const sectionGroups = [portalGroup, universeGroup, morphGroup, fluidGroup, crystalGroup, cosmosGroup]
+const sectionGroups = [portalGroup, universeGroup, morphGroup, fluidGroup, entropyGroup, crystalGroup, cosmosGroup, quantumGroup, singularityGroup]
 
 // Transition state
 let currentSectionIndex = 0
@@ -1305,8 +2234,8 @@ let cursorX = 0, cursorY = 0
 let cursorTargetX = 0, cursorTargetY = 0
 
 function updateCursor() {
-  cursorX += (cursorTargetX - cursorX) * 0.15
-  cursorY += (cursorTargetY - cursorY) * 0.15
+  cursorX = cursorTargetX
+  cursorY = cursorTargetY
 
   cursorDot.style.transform = `translate(${cursorTargetX}px, ${cursorTargetY}px) translate(-50%, -50%)`
   cursorRing.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`
@@ -1345,14 +2274,14 @@ const navProgressFill = document.querySelector('.nav-progress-fill')
 const navLinks = document.querySelectorAll('.nav-link')
 
 // Section opacity values for crossfade
-const sectionOpacity = [1, 0, 0, 0, 0, 0]
+const sectionOpacity = [1, 0, 0, 0, 0, 0, 0]
 
 // Cache section content elements for text fade animation
 const sectionContents = document.querySelectorAll('.section-content')
 
 function updateSectionVisibility(scrollProgress) {
   // Calculate which section we're in and how far through it
-  const totalSections = 6
+  const totalSections = 9
   const rawSection = scrollProgress * totalSections
   const sectionIndex = Math.min(Math.floor(rawSection), totalSections - 1)
   const sectionProgress = rawSection - sectionIndex
@@ -1404,6 +2333,17 @@ function updateSectionVisibility(scrollProgress) {
           sectionContents[i].style.pointerEvents = opacity > 0.01 ? 'auto' : 'none'
         }
       })
+
+      // Encrypted Text Logic for Hero Section (Index 0)
+      if (i === 0 && encryptedLines.length > 0) {
+        if (opacity < 0.1) {
+          // Scramble when hidden/fading out
+          encryptedLines.forEach(enc => enc.reset())
+        } else if (opacity > 0.5) {
+          // Decrypt when visible
+          encryptedLines.forEach(enc => enc.animate())
+        }
+      }
     }
   }
 
@@ -1459,6 +2399,16 @@ const heroTimeline = gsap.timeline({ delay: 0.5 })
 function initHeroAnimations() {
   const heroLines = document.querySelectorAll('.hero-line')
   const heroSubtitle = document.querySelector('.hero-subtitle')
+
+  // Initialize EncryptedText for each line
+  encryptedLines = Array.from(heroLines).map((line, index) => new EncryptedText(line, {
+    chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+-=[]{}|;:,.<>?',
+    interval: 50,
+    revealDelay: 800 + (index * 200) // Staggered reveal
+  }))
+
+  // Start in scrambled state
+  encryptedLines.forEach(enc => enc.reset())
 
   heroTimeline
     .to(heroLines, {
@@ -1605,6 +2555,13 @@ function animate(currentTime) {
     )
   }
 
+  // Entropy section
+  if (entropyGroup.visible) {
+    entropyMaterial.uniforms.uTime.value = time
+    entropyMaterial.uniforms.uMouse.value.set(state.mouse.x, state.mouse.y)
+    entropyParticleMat.uniforms.uTime.value = time
+  }
+
   // Crystal section
   if (crystalGroup.visible) {
     crystalGroup.children.forEach((crystal, i) => {
@@ -1676,6 +2633,48 @@ function animate(currentTime) {
     connectionGeometry.attributes.position.needsUpdate = true
 
     cosmosGroup.rotation.y = time * 0.04
+  }
+  // Quantum section
+  if (quantumGroup.visible) {
+    // Update Core Shader
+    coreMaterial.uniforms.uTime.value = time
+    coreMaterial.uniforms.uMouse.value.set(state.mouse.x * 2, state.mouse.y * 2)
+
+    // Update Stream Shaders and Rotation
+    streamGroup.children.forEach(stream => {
+      stream.rotation.x += stream.userData.rotSpeed.x
+      stream.rotation.y += stream.userData.rotSpeed.y
+      stream.rotation.z += stream.userData.rotSpeed.z
+      if (stream.material.uniforms) {
+        stream.material.uniforms.uTime.value = time
+      }
+    })
+
+    // Update Firefly Particles
+    fireflyMaterial.uniforms.uTime.value = time
+  }
+
+  // Singularity section
+  if (singularityGroup.visible) {
+    // Update shared uniforms (used by both disk and halo)
+    singularityUniforms.uTime.value = time
+
+    // Mouse interaction for shader distortion
+    // Normalize mouse to -1 to 1 range
+    const mouseX = (state.mouse.x / window.innerWidth) * 2 - 1
+    const mouseY = -(state.mouse.y / window.innerHeight) * 2 + 1
+    singularityUniforms.uMouse.value.set(mouseX, mouseY)
+
+    // Parallax effect: subtle camera movement based on mouse
+    // We only move the group slightly to avoid breaking the fixed perspective illusion
+    const targetRotX = mouseY * 0.05
+    const targetRotY = mouseX * 0.05
+
+    singularityGroup.rotation.x += (targetRotX - singularityGroup.rotation.x) * 0.05
+    singularityGroup.rotation.y += (targetRotY - singularityGroup.rotation.y) * 0.05
+
+    // Photon ring always faces camera
+    photonRing.lookAt(camera.position)
   }
 
   renderer.render(scene, camera)

@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { EncryptedText } from './EncryptedText.js'
+import { DatapointManager } from './Datapoints.js'
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger)
@@ -40,6 +41,7 @@ const state = {
 }
 
 let encryptedLines = []
+const datapointManager = new DatapointManager()
 
 // ═══════════════════════════════════════════════════════════════
 // THREE.JS SETUP - Enhanced Quality
@@ -2375,6 +2377,9 @@ function updateSectionVisibility(scrollProgress) {
   })
 
   state.currentSection = sectionIndex
+
+  // Update Datapoints
+  datapointManager.update(sectionIndex)
 }
 
 // Single scroll trigger - smooth and performant
@@ -2425,6 +2430,9 @@ function initHeroAnimations() {
       duration: 1,
       ease: 'power3.out'
     }, '-=0.5')
+
+  // Show initial datapoints
+  datapointManager.update(0)
 }
 
 // Section reveal animations

@@ -36,14 +36,14 @@
   <nav id="nav" class="nav">
     <div class="nav-logo">WICKED</div>
     <div class="nav-links">
-      <a href="#portal" class="nav-link active" data-section="0">Portal</a>
-      <a href="#particles" class="nav-link" data-section="1">Universe</a>
-      <a href="#morph" class="nav-link" data-section="2">Morph</a>
-      <a href="#fluid" class="nav-link" data-section="3">Fluid</a>
-      <a href="#entropy" class="nav-link" data-section="4">Entropy</a>
-      <a href="#crystal" class="nav-link" data-section="5">Crystal</a>
-      <a href="#cosmos" class="nav-link" data-section="6">Cosmos</a>
-      <a href="#quantum" class="nav-link" data-section="7">Quantum</a>
+      <a href="#portal" class="nav-link active" data-section="0">Genesis</a>
+      <a href="#particles" class="nav-link" data-section="1">Nodes</a>
+      <a href="#morph" class="nav-link" data-section="2">Trilemma</a>
+      <a href="#fluid" class="nav-link" data-section="3">Liquidity</a>
+      <a href="#entropy" class="nav-link" data-section="4">PoW</a>
+      <a href="#crystal" class="nav-link" data-section="5">Ledger</a>
+      <a href="#cosmos" class="nav-link" data-section="6">Mempool</a>
+      <a href="#quantum" class="nav-link" data-section="7">Lightning</a>
       <a href="#singularity" class="nav-link" data-section="8">Singularity</a>
     </div>
     <div class="nav-progress">
@@ -53,6 +53,9 @@
 
   <!-- Main Canvas (Three.js) -->
   <canvas id="webgl-canvas"></canvas>
+
+  <!-- Datapoints Container -->
+  <div id="datapoints-container"></div>
 
   <!-- Sections -->
   <main id="main">
@@ -64,7 +67,7 @@
           <span class="hero-line hero-accent">WICKED</span>
           <span class="hero-line">DIMENSION</span>
         </h1>
-        <p class="hero-subtitle">Scroll to begin your journey through immersive WebGL experiences</p>
+        <p class="hero-subtitle">Scroll to explore the decentralized revolution, from Genesis to Singularity</p>
         <div class="scroll-indicator">
           <div class="scroll-arrow"></div>
           <span>Scroll</span>
@@ -76,8 +79,8 @@
     <section id="particles" class="section section-particles" data-section="particles">
       <div class="section-content">
         <span class="section-label">01</span>
-        <h2 class="section-title">Particle Universe</h2>
-        <p class="section-description">Navigate through thousands of stars. Your cursor commands gravity itself.</p>
+        <h2 class="section-title">Nodes & Decentralization</h2>
+        <p class="section-description">A galaxy of sovereign validators. No central authority, only consensus.</p>
       </div>
     </section>
 
@@ -85,8 +88,9 @@
     <section id="morph" class="section section-morph" data-section="morph">
       <div class="section-content">
         <span class="section-label">02</span>
-        <h2 class="section-title">Morphing Geometries</h2>
-        <p class="section-description">Watch as platonic solids transform through noise-driven displacement.</p>
+        <h2 class="section-title">The Trilemma</h2>
+        <p class="section-description">Balancing Scalability, Security, and Decentralization in a shifting geometric
+          landscape.</p>
       </div>
     </section>
 
@@ -94,8 +98,8 @@
     <section id="fluid" class="section section-fluid" data-section="fluid">
       <div class="section-content">
         <span class="section-label">03</span>
-        <h2 class="section-title">Fluid Dynamics</h2>
-        <p class="section-description">Real-time fluid simulation reacting to your every movement.</p>
+        <h2 class="section-title">Liquidity & Flow</h2>
+        <p class="section-description">Global capital flowing freely across borders, 24/7, without friction.</p>
       </div>
     </section>
 
@@ -103,8 +107,8 @@
     <section id="entropy" class="section section-entropy" data-section="entropy">
       <div class="section-content">
         <span class="section-label">04</span>
-        <h2 class="section-title">Entropy</h2>
-        <p class="section-description">The beautiful chaos of noise fields. Order emerging from disorder.</p>
+        <h2 class="section-title">Proof of Work</h2>
+        <p class="section-description">Order from chaos. Energy converted into unforgeable digital truth.</p>
       </div>
     </section>
 
@@ -112,8 +116,8 @@
     <section id="crystal" class="section section-crystal" data-section="crystal">
       <div class="section-content">
         <span class="section-label">05</span>
-        <h2 class="section-title">Crystal Gallery</h2>
-        <p class="section-description">Photorealistic gems with light refraction and prismatic effects.</p>
+        <h2 class="section-title">Immutable Ledger</h2>
+        <p class="section-description">Crystalline UTXOs. A history that cannot be rewritten, only built upon.</p>
       </div>
     </section>
 
@@ -121,8 +125,9 @@
     <section id="cosmos" class="section section-cosmos" data-section="cosmos">
       <div class="section-content">
         <span class="section-label">06</span>
-        <h2 class="section-title">Data Cosmos</h2>
-        <p class="section-description">Abstract visualization of interconnected data nodes pulsing with energy.</p>
+        <h2 class="section-title">Mempool & Propagation</h2>
+        <p class="section-description">The global gossip protocol. Transactions propagating through the digital cosmos.
+        </p>
       </div>
     </section>
 
@@ -130,8 +135,8 @@
     <section id="quantum" class="section section-quantum" data-section="quantum">
       <div class="section-content">
         <span class="section-label">07</span>
-        <h2 class="section-title">Quantum Core</h2>
-        <p class="section-description">A volatile singularity of pure energy. The source of all digital matter.</p>
+        <h2 class="section-title">Lightning Network</h2>
+        <p class="section-description">Layer 2 scaling. Instant settlement at the speed of light.</p>
 
       </div>
     </section>
@@ -140,8 +145,8 @@
     <section id="singularity" class="section section-singularity" data-section="singularity">
       <div class="section-content">
         <span class="section-label">08</span>
-        <h2 class="section-title">The Singularity</h2>
-        <p class="section-description">Beyond the event horizon. Where time stops and gravity bends light.</p>
+        <h2 class="section-title">Hyperbitcoinization</h2>
+        <p class="section-description">The event horizon of money. A new economic singularity.</p>
         <div class="cta-container">
           <a href="#portal" class="cta-button">
             <span>Reboot System</span>
